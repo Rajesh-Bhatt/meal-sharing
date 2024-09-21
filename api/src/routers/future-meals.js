@@ -6,8 +6,8 @@ const futureMealsRouter = express.Router();
 
 futureMealsRouter.get("/", async (req, res) => {
   const now = new Date();
-  const future_meals = await knex("meal").where("when", ">", now);
-  res.json(future_meals);
+  const futureMeals = await knex("meal").where("when", ">", now);
+  res.json(futureMeals);
 });
 
 export default futureMealsRouter;
