@@ -3,13 +3,70 @@ import knex from "../database_client.js";
 
 const mealsRouter = express.Router();
 
-//Returns all meals
-mealsRouter.get("/", async (req, res) => {
+mealsRouter.get("/", async (req, res, next) => {
   try {
-    const meals = await knex("meal").select("*");
+    const query = knex("meal");
+    const {
+      maxPrice,
+      availableReservations,
+      title,
+      dateAfter,
+      dateBefore,
+      limit,
+      sortKey,
+      sortDir,
+    } = req.query;
+
+    if (maxPrice !== undefined) {
+      query.where("price", "<", maxPrice);
+    }
+    if (availableReservations !== undefined) {
+      if (availableReservations === "true") {
+        //might be returned as a string, hence checking explicitly
+        query
+          .leftJoin("reservation", "meal.id", "=", "reservation.meal_id")
+          .select("meal.id", "meal.max_reservations", "meal.title")
+          .sum("reservation.number_of_guests as sum_of_guests")
+          .groupBy("meal.id", "meal.max_reservations", "meal.title")
+          .having("sum_of_guests", "<", knex.ref("meal.max_reservations"));
+      } else {
+        query
+          .leftJoin("reservation", "meal.id", "=", "reservation.meal_id")
+          .select("meal.id", "meal.max_reservations", "meal.title")
+          .sum("reservation.number_of_guests as sum_of_guests")
+          .groupBy("meal.id", "meal.max_reservations", "meal.title")
+          .having("sum_of_guests", ">=", knex.ref("meal.max_reservations"));
+      }
+    }
+    if (title !== undefined) {
+      query.where("title", "like", `%${title}%`); //performing a partial match here
+    }
+    if (dateAfter !== undefined) {
+      query.where("when", ">", dateAfter);
+    }
+    if (dateBefore !== undefined) {
+      query.where("when", "<", dateBefore);
+    }
+    if (limit !== undefined) {
+      query.limit(limit); //Returns the given number of meals
+    }
+
+    //Returns all meals sorted by the given key
+    if (sortKey !== undefined) {
+      if (sortKey == "price") {
+        query.orderBy("price", sortDir !== undefined ? sortDir : "asc");
+      }
+      if (sortKey == "max_reservations") {
+        query.orderBy(
+          "max_reservations",
+          sortDir !== undefined ? sortDir : "asc"
+        );
+      }
+    }
+    const meals = await query;
     res.json(meals);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching meals" });
+    next(error);
   }
 });
 
@@ -71,6 +128,22 @@ mealsRouter.delete("/:id", async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to delete meal" });
+  }
+});
+
+//Returns all reviews for a specific meal.
+// GET /api/meals/:meal_id/reviews
+mealsRouter.get("/:meal_id/reviews", async (req, res, next) => {
+  try {
+    const id = req.params.meal_id;
+    const reviewsForMeal = await knex("review").where("meal_id", id);
+    if (reviewsForMeal.length == 0) {
+      res.json({ message: "Meal not found" });
+    } else {
+      res.json(reviewsForMeal);
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
