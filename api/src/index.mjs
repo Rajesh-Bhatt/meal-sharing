@@ -10,6 +10,7 @@ import firstMealRouter from "./routers/past-meals.js";
 import lastMealRouter from "./routers/last-meal.js";
 import mealsRouter from "./routers/meals.js";
 import reservationsRouter from "./routers/reservations.js";
+import reviewRouter from "./routers/review.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ apiRouter.get("/", async (req, res) => {
   <li><strong>/api/last-meal:</strong> Get the meal with the largest ID.</li>
    <li><strong>/api/meals:</strong> Get information about all meals.</li>
    <li><strong>/api/reservations:</strong> Get information about meal reservations.</li>
+   <li><strong>/api/reviews:</strong> Get information about meal reviews.</li>
   </ul>
 `);
 });
@@ -43,6 +45,7 @@ apiRouter.use("/first-meal", firstMealRouter);
 apiRouter.use("/last-meal", lastMealRouter);
 apiRouter.use("/meals", mealsRouter);
 apiRouter.use("/reservations", reservationsRouter);
+apiRouter.use("/reviews", reviewRouter);
 
 app.use("/api", apiRouter);
 
