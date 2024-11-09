@@ -42,5 +42,4 @@ app.use("/api", apiRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running at http://localhost:${process.env.PORT}`);
-  //console.log(`API listening on port ${PORT}`);
 });
